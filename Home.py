@@ -1,20 +1,14 @@
 import streamlit as st
-from pathlib import Path
-import time
-from langchain.memory import ConversationBufferMemory
+from dotenv import load_dotenv
+from utils import cria_chain_conversa, PASTA_ARQUIVOS
 
-PASTA_ARQUIVOS = Path(__file__).parent / "arquivos"
+load_dotenv()
 
-
-def cria_chain_conversa():
-    st.session_state["chain"] = True
-
-    memory = ConversationBufferMemory(return_messages=True)
-    memory.chat_memory.add_user_message("Oi")
-    memory.chat_memory.add_ai_message("Oi, eu sou uma LLM!")
-    st.session_state["memory"] = memory
-    time.sleep(1)
-    pass
+st.set_page_config(
+    page_title="Início",  # Título que aparece na aba do navegador
+    page_icon="🏠",  # Ícone da aba (pode ser emoji ou arquivo .png)
+    layout="centered",  # "centered" ou "wide"
+)
 
 
 def sidebar():
@@ -47,8 +41,10 @@ def chat_window():
         st.error("Faça o upload de PDFs para começar!")
         st.stop()
 
-    memory = st.session_state["memory"]
-    mensagens = memory.load_memory_variables({})["history"]
+    chain = st.session_state["chain"]
+    memory = chain.memory
+
+    mensagens = memory.load_memory_variables({})["chat_history"]
 
     container = st.container()
     for mensagem in mensagens:
@@ -62,9 +58,7 @@ def chat_window():
         chat = container.chat_message("ai")
         chat.markdown("Gerando resposta")
 
-        time.sleep(2)
-        memory.chat_memory.add_user_message(nova_mensagem)
-        memory.chat_memory.add_ai_message("Oi, é a LLM aqui de novo!")
+        chain.invoke({"question": nova_mensagem})
         st.rerun()
 
 
